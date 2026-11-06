@@ -6,15 +6,31 @@ public class PlayerController : NetworkBehaviour
 {
     [Header("Moviment")]
     public float speed = 5f;
+    public float runSpeed = 8f;
     public float jumpImpulse = 12f;
 
     [Header("Sòl")]
     public float groundCheckDistance = 1.1f;
     public LayerMask groundMask = ~0;
 
+    [Header("Objectes")]
+    public float grabDistance = 3f;
+    public float dropImpulse = 12f;
+    public Vector3 holdOffset = new Vector3(0f, 1f, 1.2f);
+
+    [Header("Empènyer")]
+    public float pushForce = 12f;
+    public float pushDuration = 0.3f;
+
     private Rigidbody rb;
+    private Rigidbody heldObject;
+    private Rigidbody pushTarget;
+    private float pushTimer;
     private Vector2 inputVector;
+    private bool runPressed;
     private bool jumpRequested;
+    private bool grabRequested;
+    private bool pushRequested;
 
     private void Awake()
     {
@@ -43,6 +59,10 @@ public class PlayerController : NetworkBehaviour
 
         float h = 0f;
         float v = 0f;
+        bool running = false;
+        bool jumpPressed = false;
+        bool grabPressed = false;
+        bool pushPressed = false;
 
         if (Keyboard.current != null)
         {
@@ -51,29 +71,39 @@ public class PlayerController : NetworkBehaviour
             if (Keyboard.current.sKey.isPressed || Keyboard.current.downArrowKey.isPressed) v -= 1f;
             if (Keyboard.current.wKey.isPressed || Keyboard.current.upArrowKey.isPressed) v += 1f;
 
-            if (Keyboard.current.spaceKey.wasPressedThisFrame)
-            {
-                jumpRequested = true;
-            }
+            running = Keyboard.current.leftShiftKey.isPressed || Keyboard.current.rightShiftKey.isPressed;
+            jumpPressed = Keyboard.current.spaceKey.wasPressedThisFrame;
+            grabPressed = Keyboard.current.fKey.wasPressedThisFrame;
+            pushPressed = Keyboard.current.eKey.wasPressedThisFrame;
         }
 
         Vector2 input = new Vector2(h, v).normalized;
 
-        // Enviem l'input i la petició de salt al servidor mitjançant ServerRpc
-        SubmitInputServerRpc(input, jumpRequested);
-
-        // Resetegem localment la petició per evitar bucles
-        if (jumpRequested) jumpRequested = false;
+        // Enviem l'input i les accions al servidor mitjançant ServerRpc.
+        // Important: NO toquem jumpRequested aquí, perquè en el host aquest mateix
+        // objecte és alhora client i servidor i esborraríem la petició de salt.
+        SubmitInputServerRpc(input, running, jumpPressed, grabPressed, pushPressed);
     }
 
     [ServerRpc]
-    private void SubmitInputServerRpc(Vector2 input, bool jumpPressed)
+    private void SubmitInputServerRpc(Vector2 input, bool running, bool jumpPressed, bool grabPressed, bool pushPressed)
     {
         inputVector = input;
+        runPressed = running;
 
         if (jumpPressed)
         {
             jumpRequested = true;
+        }
+
+        if (grabPressed)
+        {
+            grabRequested = true;
+        }
+
+        if (pushPressed)
+        {
+            pushRequested = true;
         }
     }
 
@@ -82,9 +112,10 @@ public class PlayerController : NetworkBehaviour
         // El servidor calcula totes les físiques de manera autoritària
         if (!IsServer) return;
 
-        // 1. Moviment XZ
+        // 1. Moviment XZ (caminar a 5, córrer a 8)
+        float currentSpeed = runPressed ? runSpeed : speed;
         Vector3 moveDirection = new Vector3(inputVector.x, 0f, inputVector.y);
-        Vector3 targetVelocity = moveDirection * speed;
+        Vector3 targetVelocity = moveDirection * currentSpeed;
         rb.linearVelocity = new Vector3(targetVelocity.x, rb.linearVelocity.y, targetVelocity.z);
 
         // 2. Orientació (LookAt / Rotació)
@@ -104,6 +135,68 @@ public class PlayerController : NetworkBehaviour
 
             jumpRequested = false;
         }
+
+        // 4. Agafar / deixar anar objecte amb F
+        if (grabRequested)
+        {
+            if (heldObject != null)
+            {
+                DropObject();
+            }
+            else
+            {
+                TryGrabObject();
+            }
+
+            grabRequested = false;
+        }
+
+        // 5. Empènyer objecte amb E durant 0.3 s
+        if (pushRequested)
+        {
+            pushTarget = GetFocusedRigidbody();
+            pushTimer = pushTarget != null ? pushDuration : 0f;
+            pushRequested = false;
+        }
+
+        if (pushTarget != null && pushTimer > 0f)
+        {
+            pushTarget.AddForce(transform.forward * pushForce, ForceMode.Force);
+            pushTimer -= Time.fixedDeltaTime;
+        }
+    }
+
+    private Rigidbody GetFocusedRigidbody()
+    {
+        Ray ray = new Ray(transform.position + Vector3.up * 0.5f, transform.forward);
+
+        if (!Physics.Raycast(ray, out RaycastHit hit, grabDistance)) return null;
+        if (hit.rigidbody == null || hit.rigidbody == rb) return null;
+        if (hit.collider.GetComponent<PlayerController>() != null) return null;
+
+        return hit.rigidbody;
+    }
+
+    private void TryGrabObject()
+    {
+        Rigidbody target = GetFocusedRigidbody();
+        if (target == null) return;
+
+        heldObject = target;
+        heldObject.linearVelocity = Vector3.zero;
+        heldObject.angularVelocity = Vector3.zero;
+        heldObject.isKinematic = true;
+        heldObject.transform.SetParent(transform);
+        heldObject.transform.localPosition = holdOffset;
+        heldObject.transform.localRotation = Quaternion.identity;
+    }
+
+    private void DropObject()
+    {
+        heldObject.transform.SetParent(null);
+        heldObject.isKinematic = false;
+        heldObject.AddForce(transform.forward * dropImpulse, ForceMode.Impulse);
+        heldObject = null;
     }
 
     private bool IsGrounded()
