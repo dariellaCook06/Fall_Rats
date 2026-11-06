@@ -34,8 +34,7 @@ public static class MultiplayerSetup
             bool configure = EditorUtility.DisplayDialog(
                 "Fall Rats - Multiplayer",
                 "¿Configuro el multiplayer ahora?\n\n" +
-                "Se creará Assets/Prefabs/Player.prefab, se añadirá el NetworkManager a Lobby " +
-                "y se conectará la cámara al jugador local.",
+                "Se creará Assets/Prefabs/Player.prefab y se añadirá el NetworkManager a Lobby.",
                 "Sí, configurar",
                 "Ahora no");
 
@@ -79,7 +78,6 @@ public static class MultiplayerSetup
         RemoveOldScenePlayer();
 
         NetworkManager networkManager = GetOrCreateNetworkManager(playerPrefab);
-        SetupCamera();
 
         EditorSceneManager.MarkSceneDirty(scene);
         EditorSceneManager.SaveScene(scene);
@@ -89,7 +87,7 @@ public static class MultiplayerSetup
         Selection.activeObject = networkManager.gameObject;
         EditorGUIUtility.PingObject(networkManager.gameObject);
 
-        Debug.Log("[MultiplayerSetup] Listo: NetworkManager, Player.prefab y CameraFollow configurados.");
+        Debug.Log("[MultiplayerSetup] Listo: NetworkManager y Player.prefab configurados.");
     }
 
     private static GameObject GetOrCreatePlayerPrefab()
@@ -106,9 +104,6 @@ public static class MultiplayerSetup
         }
 
         GameObject oldPlayer = GameObject.Find("Capsule");
-        PlayerController oldController = oldPlayer != null
-            ? oldPlayer.GetComponent<PlayerController>()
-            : null;
 
         Material material = AssetDatabase.LoadAssetAtPath<Material>(PlayerMaterialPath);
         if (oldPlayer != null)
@@ -143,12 +138,7 @@ public static class MultiplayerSetup
         NetworkTransform networkTransform = player.AddComponent<NetworkTransform>();
         networkTransform.AuthorityMode = NetworkTransform.AuthorityModes.Server;
 
-        PlayerController controller = player.AddComponent<PlayerController>();
-        if (oldController != null)
-        {
-            controller.speed = oldController.speed;
-            controller.jumpForce = oldController.jumpForce;
-        }
+        player.AddComponent<PlayerController>();
 
         GameObject prefab = PrefabUtility.SaveAsPrefabAsset(player, PlayerPrefabPath);
         Object.DestroyImmediate(player);
@@ -223,24 +213,5 @@ public static class MultiplayerSetup
 
         EditorUtility.SetDirty(networkManager);
         return networkManager;
-    }
-
-    private static void SetupCamera()
-    {
-        Camera camera = Camera.main;
-
-        if (camera == null)
-        {
-            Debug.LogWarning("[MultiplayerSetup] No encontré una cámara con el tag MainCamera.");
-            return;
-        }
-
-        if (camera.GetComponent<CameraFollow>() == null)
-        {
-            camera.gameObject.AddComponent<CameraFollow>();
-        }
-
-        camera.transform.position = new Vector3(0f, 5f, -8f);
-        EditorUtility.SetDirty(camera.gameObject);
     }
 }
