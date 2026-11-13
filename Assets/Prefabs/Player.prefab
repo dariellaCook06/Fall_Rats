@@ -16,6 +16,7 @@ GameObject:
   - component: {fileID: 6795543390801963290}
   - component: {fileID: 8119041312846538492}
   - component: {fileID: 1324617259821948622}
+  - component: {fileID: 8123456789012345678}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -164,7 +165,7 @@ MonoBehaviour:
   Ownership: 1
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
-  m_InScenePlaced: 1
+  m_InScenePlaced: 0
   ActiveSceneSynchronization: 0
   SceneMigrationSynchronization: 0
   SpawnWithObservers: 1
@@ -239,3 +240,19 @@ MonoBehaviour:
     m_Bits: 4294967295
   useSpawnOffset: 1
   spawnSpacing: 2
+--- !u!114 &8123456789012345678
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5056762482405035287}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: df571e8641cfcf040b7e7ee860162fd6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CameraThirdPerson
+  ShowTopMostFoldoutHeaderGroup: 1
+  distance: 8
+  height: 3
+  speed: 5
