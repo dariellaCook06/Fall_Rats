@@ -128,7 +128,7 @@ GameObject:
   - component: {fileID: 6795543390801963290}
   - component: {fileID: 8119041312846538492}
   - component: {fileID: 1324617259821948622}
-  - component: {fileID: 8123456789012345678}
+  - component: {fileID: 9133418050432032795}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -271,14 +271,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 1634548525
+  GlobalObjectIdHash: 3244707950
   InScenePlacedSourceGlobalObjectIdHash: 3244707950
   m_InScenePlacedDisabledByDefault: 0
   DeferredDespawnTick: 0
   Ownership: 1
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
-  m_InScenePlaced: 1
+  m_InScenePlaced: 0
   ActiveSceneSynchronization: 0
   SceneMigrationSynchronization: 0
   SpawnWithObservers: 1
@@ -346,7 +346,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController
   ShowTopMostFoldoutHeaderGroup: 1
   speed: 5
---- !u!114 &8123456789012345678
+--- !u!114 &9133418050432032795
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -355,10 +355,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 5056762482405035287}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: df571e8641cfcf040b7e7ee860162fd6, type: 3}
+  m_Script: {fileID: 11500000, guid: 5aff015398c75a34e967fd0860fa18c3, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::CameraThirdPerson
+  m_EditorClassIdentifier: Assembly-CSharp::SonicShout
   ShowTopMostFoldoutHeaderGroup: 1
-  distance: 8
-  height: 3
-  speed: 5
+  shoutDuration: 3
+  shoutRadius: 5
+  pushForce: 8
