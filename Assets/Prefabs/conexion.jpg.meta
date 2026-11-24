@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 0046459945831934cbf93df9fad6c3ed
+guid: 6bf4d2e8a1740624cae5eb482d0faeb3
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -1067921469028970827
-    second: Proyecto_Gluten_0
+      213: 1710971309949974293
+    second: conexion_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -113,7 +113,7 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Proyecto_Gluten_0
+      name: conexion_0
       rect:
         serializedVersion: 2
         x: 0
@@ -128,8 +128,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 5bec38ef41bfd21f0800000000000000
-      internalID: -1067921469028970827
+      spriteID: 517f37e57579eb710800000000000000
+      internalID: 1710971309949974293
       vertices: []
       indices: 
       edges: []
@@ -148,7 +148,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Proyecto_Gluten_0: -1067921469028970827
+      conexion_0: 1710971309949974293
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
