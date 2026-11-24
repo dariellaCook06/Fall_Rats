@@ -5,11 +5,22 @@ using UnityEngine;
 
 public class NetworkUI : MonoBehaviour
 {
-    [Header("Arrastra aquí SOLO el panel y el campo de IP")]
-    public GameObject panelConexion;   // el panel que quieres que desaparezca
-    public TMP_InputField campoIP;     // opcional
+    [Header("Arrastra aquí el panel, la IP y el nombre")]
+    public GameObject panelConexion;    // el panel que quieres que desaparezca
+    public TMP_InputField campoIP;      // opcional
+    public TMP_InputField campoNombre;  // el InputPlayer
+
+    // Aquí se queda el nombre para usarlo luego en la lista
+    public static string NombreJugador = "";
 
     private string ip = "127.0.0.1";
+
+    private void Start()
+    {
+        // Recupera el nombre guardado la última vez
+        NombreJugador = PlayerPrefs.GetString("NombreJugador", "");
+        if (campoNombre != null) campoNombre.text = NombreJugador;
+    }
 
     private void Update()
     {
@@ -23,9 +34,24 @@ public class NetworkUI : MonoBehaviour
         }
     }
 
+    // Guarda el nombre del campo en PlayerPrefs (queda guardado en el PC)
+    private void GuardarNombre()
+    {
+        if (campoNombre == null) return;
+
+        NombreJugador = campoNombre.text.Trim();
+        if (NombreJugador.Length > 16) NombreJugador = NombreJugador.Substring(0, 16);
+        if (NombreJugador == "") NombreJugador = "Jugador";
+
+        PlayerPrefs.SetString("NombreJugador", NombreJugador);
+        PlayerPrefs.Save();
+    }
+
     // Esta la llamas desde el OnClick del botón Host
     public void Host()
     {
+        GuardarNombre();
+
         var transport = NetworkManager.Singleton.GetComponent<Unity.Netcode.Transports.UTP.UnityTransport>();
         if (transport != null)
         {
@@ -38,6 +64,8 @@ public class NetworkUI : MonoBehaviour
     // Esta la llamas desde el OnClick del botón Join
     public void Join()
     {
+        GuardarNombre();
+
         if (campoIP != null && campoIP.text.Trim() != "")
         {
             ip = campoIP.text.Trim();
