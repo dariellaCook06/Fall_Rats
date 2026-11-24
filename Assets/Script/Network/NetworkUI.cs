@@ -6,9 +6,9 @@ using UnityEngine;
 public class NetworkUI : MonoBehaviour
 {
     [Header("Arrastra aquí el panel, la IP y el nombre")]
-    public GameObject panelConexion;    // el panel que quieres que desaparezca
-    public TMP_InputField campoIP;      // opcional
-    public TMP_InputField campoNombre;  // el InputPlayer
+    public GameObject panelConexion;
+    public TMP_InputField campoIP;
+    public TMP_InputField campoNombre;
 
     // Aquí se queda el nombre para usarlo luego en la lista
     public static string NombreJugador = "";
