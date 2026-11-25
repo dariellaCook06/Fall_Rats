@@ -36,8 +36,6 @@ public class PlayerController : NetworkBehaviour
             rb.isKinematic = !IsServer;
         }
     }
-
-    // ----------- INPUTS (CLIENTE DUEÑO -> SERVIDOR) -----------
     private void Update()
     {
         // Solo el jugador dueño lee sus propias teclas
@@ -73,7 +71,6 @@ public class PlayerController : NetworkBehaviour
         inputVector = input;
     }
 
-    // ----------- SALTO -----------
     [ServerRpc]
     private void JumpServerRpc()
     {
@@ -95,7 +92,6 @@ public class PlayerController : NetworkBehaviour
         }
     }
 
-    // ----------- MOVIMIENTO Y ORIENTACIÓN (SERVIDOR) -----------
     private void FixedUpdate()
     {
         // Solo el servidor aplica la física autoritativa
@@ -104,7 +100,7 @@ public class PlayerController : NetworkBehaviour
         Vector3 moveDirection = new Vector3(inputVector.x, 0f, inputVector.y);
         Vector3 targetVelocity = moveDirection * speed;
 
-        // Mantenemos la velocidad vertical (gravedad / salto) y aplicamos X y Z
+        // Mantenemos la velocidad vertical y aplicamos X y Z
         rb.linearVelocity = new Vector3(targetVelocity.x, rb.linearVelocity.y, targetVelocity.z);
 
         // Orientamos el jugador hacia la dirección en la que se mueve

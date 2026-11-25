@@ -359,6 +359,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SonicShout
   ShowTopMostFoldoutHeaderGroup: 1
-  shoutDuration: 3
-  shoutRadius: 5
+  duration: 3
+  radius: 5
   pushForce: 8
