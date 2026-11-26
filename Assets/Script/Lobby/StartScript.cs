@@ -1,88 +1,124 @@
-using System.Collections.Generic;
+using TMPro;
 using Unity.Netcode;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class StartScript : NetworkBehaviour
 {
+    public Canvas startCanvas;
     public GameObject PanelStart;
     public Button beginButton;
-    public Button readyButton;
+    public TextMeshProUGUI readyButtonText;
+    public TextMeshProUGUI playersCounterText;
+    public NextMinigameLoader nextMinigameLoader;
 
-    private readonly string[] scenes = { "FallAtrapaHuevos", "FallPlatform", "FallCarrera" };
-    private readonly HashSet<ulong> readyPlayers = new HashSet<ulong>();
+    private int readyCount = 0;
+    private bool isReady = false;
+    private bool isStarting = false;
+
+    private void Awake()
+    {
+        if (startCanvas == null)
+            startCanvas = GetComponent<Canvas>();
+    }
 
     public override void OnNetworkSpawn()
     {
-        if (readyButton != null)
-            readyButton.onClick.AddListener(Ready);
+        isStarting = false;
+        readyCount = 0;
+        isReady = false;
+
+        HideStartCanvas();
+
+        if (readyButtonText != null)
+            readyButtonText.text = "Ready";
 
         if (beginButton != null)
         {
-            beginButton.onClick.AddListener(Begin);
+            beginButton.gameObject.SetActive(IsServer);
             beginButton.interactable = false;
         }
+
+        RefreshText();
+    }
+
+    public void ShowStartCanvas()
+    {
+        if (startCanvas != null)
+            startCanvas.enabled = true;
+
+        if (PanelStart != null)
+            PanelStart.SetActive(true);
+    }
+
+    public void HideStartCanvas()
+    {
+        if (PanelStart != null)
+            PanelStart.SetActive(false);
+
+        if (startCanvas != null)
+            startCanvas.enabled = false;
     }
 
     public void Ready()
     {
-        if (readyButton != null)
-            readyButton.interactable = false;
+        if (!IsSpawned || isStarting) return;
 
-        SetReadyServerRpc();
+        isReady = !isReady;
+        if (readyButtonText != null)
+            readyButtonText.text = isReady ? "Quitar Ready" : "Ready";
+
+        AddReadyServerRpc(isReady ? 1 : -1);
     }
 
     public void Begin()
     {
-        if (!IsServer) return;
-        if (NetworkManager.Singleton.ConnectedClientsIds.Count < 2) return;
+        if (!IsServer || !IsSpawned || isStarting) return;
 
-        foreach (ulong id in NetworkManager.Singleton.ConnectedClientsIds)
+        int total = NetworkManager.Singleton != null ? NetworkManager.Singleton.ConnectedClientsIds.Count : 0;
+        if (total < 2 || readyCount < total) return;
+
+        isStarting = true;
+        if (beginButton != null)
+            beginButton.interactable = false;
+
+        if (nextMinigameLoader != null)
         {
-            if (!readyPlayers.Contains(id)) return;
+            nextMinigameLoader.LoadRandomMinigame();
         }
-
-        string randomScene = scenes[Random.Range(0, scenes.Length)];
-        HidePanelClientRpc();
-        NetworkManager.Singleton.SceneManager.LoadScene(randomScene, LoadSceneMode.Single);
     }
 
     public void Exit()
     {
-        if (PanelStart != null)
-            PanelStart.SetActive(false);
+        HideStartCanvas();
     }
 
     [ServerRpc(RequireOwnership = false)]
-    private void SetReadyServerRpc(ServerRpcParams rpcParams = default)
+    private void AddReadyServerRpc(int delta)
     {
-        readyPlayers.Add(rpcParams.Receive.SenderClientId);
+        if (NetworkManager.Singleton == null || isStarting) return;
 
-        bool allReady = NetworkManager.Singleton.ConnectedClientsIds.Count >= 2;
-        foreach (ulong id in NetworkManager.Singleton.ConnectedClientsIds)
-        {
-            if (!readyPlayers.Contains(id))
-            {
-                allReady = false;
-                break;
-            }
-        }
+        int total = NetworkManager.Singleton.ConnectedClientsIds.Count;
+        readyCount = Mathf.Clamp(readyCount + delta, 0, total);
 
-        SetBeginButtonClientRpc(allReady);
+        bool canStart = total >= 2 && readyCount >= total;
+        SyncUIClientRpc(readyCount, total, canStart);
     }
 
     [ClientRpc]
-    private void SetBeginButtonClientRpc(bool active)
+    private void SyncUIClientRpc(int ready, int total, bool canStart)
     {
+        if (playersCounterText != null)
+            playersCounterText.text = $"{ready}/{total}";
+
         if (beginButton != null)
-            beginButton.interactable = IsServer && active;
+            beginButton.interactable = IsServer && canStart && !isStarting;
     }
 
-    [ClientRpc]
-    private void HidePanelClientRpc()
+    private void RefreshText()
     {
-        if (PanelStart != null)
-            PanelStart.SetActive(false);
+        int total = NetworkManager.Singleton != null ? NetworkManager.Singleton.ConnectedClientsIds.Count : 0;
+        if (playersCounterText != null)
+            playersCounterText.text = $"{readyCount}/{total}";
     }
 }

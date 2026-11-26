@@ -19,6 +19,16 @@ public class PlayerController : NetworkBehaviour
     // Sonido del salto
     private AudioSource jumpSound;
 
+    // Puntos acumulados del jugador sincronizados en red (empiezan en 0)
+    public NetworkVariable<int> points = new NetworkVariable<int>(0,NetworkVariableReadPermission.Everyone,NetworkVariableWritePermission.Server);
+
+    // Suma puntos de forma segura desde el servidor
+    public void AddPoints(int amount)
+    {
+        if (!IsServer) return;
+        points.Value += amount;
+    }
+
     private void Awake()
     {
         // Obtenemos los componentes del jugador

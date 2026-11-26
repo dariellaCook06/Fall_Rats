@@ -4,57 +4,82 @@ using UnityEngine.InputSystem;
 
 public class ZonaPulsaT : MonoBehaviour
 {
-    [Header("UI References")]
-    [SerializeField] private GameObject promptCanvas;
-    [SerializeField] private GameObject startCanvas;
+    public GameObject promptCanvas;
+    public Canvas startCanvas;
+    public StartScript startScript;
 
     private bool canInteract;
-    private Camera mainCamera;
+    private bool isOpen;
 
     private void Start()
     {
-        mainCamera = Camera.main;
+        if (startScript == null && startCanvas != null)
+            startScript = startCanvas.GetComponent<StartScript>();
+
+        if (startScript == null)
+            startScript = FindFirstObjectByType<StartScript>();
+
         if (promptCanvas != null) promptCanvas.SetActive(false);
-        if (startCanvas != null) startCanvas.SetActive(false);
+        CloseStartUI();
     }
 
     private void LateUpdate()
     {
-        if (promptCanvas == null || !promptCanvas.activeSelf) return;
-        if (mainCamera == null) mainCamera = Camera.main;
-        if (mainCamera == null) return;
-
-        promptCanvas.transform.rotation = mainCamera.transform.rotation;
+        if (promptCanvas != null && promptCanvas.activeSelf && Camera.main != null)
+            promptCanvas.transform.rotation = Camera.main.transform.rotation;
     }
 
     private void Update()
     {
-        if (!canInteract) return;
-        if (Keyboard.current == null || !Keyboard.current.tKey.wasPressedThisFrame) return;
+        if (!canInteract || Keyboard.current == null) return;
 
+        if (Keyboard.current.tKey.wasPressedThisFrame)
+        {
+            if (isOpen)
+                CloseStartUI();
+            else
+                OpenStartUI();
+        }
+    }
+
+    private void OpenStartUI()
+    {
+        isOpen = true;
         if (promptCanvas != null) promptCanvas.SetActive(false);
-        if (startCanvas != null) startCanvas.SetActive(true);
+
+        if (startScript != null)
+            startScript.ShowStartCanvas();
+        else if (startCanvas != null)
+            startCanvas.enabled = true;
+    }
+
+    private void CloseStartUI()
+    {
+        isOpen = false;
+
+        if (startScript != null)
+            startScript.HideStartCanvas();
+        else if (startCanvas != null)
+            startCanvas.enabled = false;
     }
 
     private void OnTriggerEnter(Collider other)
     {
-        if (!IsLocalPlayer(other)) return;
+        var netObj = other.GetComponentInParent<NetworkObject>();
+        if (netObj == null || !netObj.IsPlayerObject || !netObj.IsOwner) return;
 
         canInteract = true;
-        if (promptCanvas != null) promptCanvas.SetActive(true);
+        if (!isOpen && promptCanvas != null)
+            promptCanvas.SetActive(true);
     }
 
     private void OnTriggerExit(Collider other)
     {
-        if (!IsLocalPlayer(other)) return;
+        var netObj = other.GetComponentInParent<NetworkObject>();
+        if (netObj == null || !netObj.IsPlayerObject || !netObj.IsOwner) return;
 
         canInteract = false;
         if (promptCanvas != null) promptCanvas.SetActive(false);
-    }
-
-    private bool IsLocalPlayer(Collider other)
-    {
-        NetworkObject player = other.GetComponent<NetworkObject>();
-        return player != null && player.IsPlayerObject && player.IsOwner;
+        CloseStartUI();
     }
 }
