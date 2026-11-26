@@ -1660,7 +1660,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1115975269029598660, guid: c26341015c4c5c94ca0f70299a96ae31, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1154618122965136686, guid: c26341015c4c5c94ca0f70299a96ae31, type: 3}
       propertyPath: m_AnchoredPosition.x
@@ -5186,7 +5186,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2955716380322952484, guid: 3f8d098a7b280ec49a5e475d5ab34789, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3418057568467793708, guid: 3f8d098a7b280ec49a5e475d5ab34789, type: 3}
       propertyPath: m_fontSize
@@ -5222,7 +5222,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3927919782013523561, guid: 3f8d098a7b280ec49a5e475d5ab34789, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
-      value: OnReadyClicked
+      value: Ready
       objectReference: {fileID: 0}
     - target: {fileID: 3927919782013523561, guid: 3f8d098a7b280ec49a5e475d5ab34789, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
@@ -5446,7 +5446,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7910144961031217013, guid: 3f8d098a7b280ec49a5e475d5ab34789, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
-      value: OnBeginClicked
+      value: Begin
       objectReference: {fileID: 0}
     - target: {fileID: 7910144961031217013, guid: 3f8d098a7b280ec49a5e475d5ab34789, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
