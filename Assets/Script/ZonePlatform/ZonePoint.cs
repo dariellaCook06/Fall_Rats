@@ -6,19 +6,32 @@ using UnityEngine;
 public class ZonePoint : NetworkBehaviour
 {
     public NextMinigameLoader nextMinigameLoader;
+    public TeleportLost teleportLost;
     public float delayBeforeNextScene = 3f;
 
     private List<ulong> aliveClients = new List<ulong>();
     private bool roundFinished = false;
 
+    private void Awake()
+    {
+        if (teleportLost == null)
+        {
+            teleportLost = FindFirstObjectByType<TeleportLost>();
+        }
+    }
+
     public override void OnNetworkSpawn()
     {
-        if (!IsServer) return;
+        base.OnNetworkSpawn();
 
         roundFinished = false;
         aliveClients.Clear();
 
-        // Guardamos todos los jugadores conectados al empezar la ronda
+        if (!IsServer || NetworkManager.Singleton == null)
+        {
+            return;
+        }
+
         foreach (var client in NetworkManager.Singleton.ConnectedClientsList)
         {
             if (client.PlayerObject != null && client.PlayerObject.CompareTag("Player"))
@@ -28,29 +41,52 @@ public class ZonePoint : NetworkBehaviour
         }
     }
 
+    public override void OnNetworkDespawn()
+    {
+        base.OnNetworkDespawn();
+
+        StopAllCoroutines();
+        aliveClients.Clear();
+        roundFinished = false;
+    }
+
     private void OnTriggerEnter(Collider other)
     {
-        if (!IsServer || roundFinished) return;
-        if (!other.CompareTag("Player")) return;
+        if (!IsServer || roundFinished)
+        {
+            return;
+        }
 
-        // Buscamos el jugador aunque el Collider esté en un objeto hijo
+        if (!other.CompareTag("Player"))
+        {
+            return;
+        }
+
         PlayerController player = other.GetComponentInParent<PlayerController>();
-        if (player == null) return;
+        if (player == null)
+        {
+            return;
+        }
 
         ulong clientId = player.OwnerClientId;
 
-        // Si ya no está en la lista de vivos, significa que ya cayó antes
-        if (!aliveClients.Contains(clientId)) return;
+        if (!aliveClients.Contains(clientId))
+        {
+            return;
+        }
 
-        // Lo quitamos de vivos y calculamos su puesto (de atrás hacia adelante)
         aliveClients.Remove(clientId);
         int position = aliveClients.Count + 1;
         int pts = GetPointsForPosition(position);
 
         player.AddPoints(pts);
-        Debug.Log($"Jugador {clientId} cayó -> Puesto {position} (+{pts} pts)");
+        Debug.Log($"Jugador {clientId} cayó - Puesto {position} (+{pts} pts)");
 
-        // Si queda 1 solo jugador vivo, gana el 1.er puesto y acaba la ronda
+        if (teleportLost != null)
+        {
+            teleportLost.SendPlayerToLost(player);
+        }
+
         if (aliveClients.Count == 1)
         {
             GiveFirstPlace(aliveClients[0]);
@@ -71,16 +107,28 @@ public class ZonePoint : NetworkBehaviour
             if (winner != null)
             {
                 winner.AddPoints(8);
-                Debug.Log($"¡Jugador {winnerId} queda 1.er puesto (+8 pts)!");
+                Debug.Log($"Jugador {winnerId} queda 1er puesto (+8 pts)");
             }
         }
     }
 
     private int GetPointsForPosition(int position)
     {
-        if (position == 1) return 8;
-        if (position == 2) return 6;
-        if (position == 3) return 4;
+        if (position == 1)
+        {
+            return 8;
+        }
+
+        if (position == 2)
+        {
+            return 6;
+        }
+
+        if (position == 3)
+        {
+            return 4;
+        }
+
         return 2;
     }
 
