@@ -19,7 +19,9 @@ public class ZonaPulsaT : MonoBehaviour
         if (startScript == null)
             startScript = FindFirstObjectByType<StartScript>();
 
-        if (promptCanvas != null) promptCanvas.SetActive(false);
+        if (promptCanvas != null)
+            promptCanvas.SetActive(false);
+
         CloseStartUI();
     }
 
@@ -45,7 +47,9 @@ public class ZonaPulsaT : MonoBehaviour
     private void OpenStartUI()
     {
         isOpen = true;
-        if (promptCanvas != null) promptCanvas.SetActive(false);
+
+        if (promptCanvas != null)
+            promptCanvas.SetActive(false);
 
         if (startScript != null)
             startScript.ShowStartCanvas();
@@ -69,6 +73,7 @@ public class ZonaPulsaT : MonoBehaviour
         if (netObj == null || !netObj.IsPlayerObject || !netObj.IsOwner) return;
 
         canInteract = true;
+
         if (!isOpen && promptCanvas != null)
             promptCanvas.SetActive(true);
     }
@@ -79,7 +84,10 @@ public class ZonaPulsaT : MonoBehaviour
         if (netObj == null || !netObj.IsPlayerObject || !netObj.IsOwner) return;
 
         canInteract = false;
-        if (promptCanvas != null) promptCanvas.SetActive(false);
+
+        if (promptCanvas != null)
+            promptCanvas.SetActive(false);
+
         CloseStartUI();
     }
 }

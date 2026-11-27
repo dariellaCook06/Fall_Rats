@@ -3,7 +3,7 @@ using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-public class PointPlayerView : MonoBehaviour
+public class PointPlayerView : NetworkBehaviour
 {
     public static PointPlayerView Instance { get; private set; }
 
@@ -29,32 +29,29 @@ public class PointPlayerView : MonoBehaviour
         DontDestroyOnLoad(gameObject);
 
         if (canvasPointPlayer == null)
+        {
             canvasPointPlayer = GetComponent<Canvas>();
+        }
 
         EnsureVisible();
         RefreshUI(0);
     }
 
-    private void OnEnable()
+    public override void OnNetworkSpawn()
     {
+        base.OnNetworkSpawn();
+
         SceneManager.sceneLoaded += OnSceneLoaded;
-        TryBindLocalPlayer();
-        RefreshUI(localPlayer != null ? localPlayer.points.Value : 0);
+        BindLocalPlayer();
     }
 
-    private void OnDisable()
+    public override void OnNetworkDespawn()
     {
+        base.OnNetworkDespawn();
+
         SceneManager.sceneLoaded -= OnSceneLoaded;
-    }
-
-    private void Update()
-    {
-        EnsureVisible();
-
-        if (!isSubscribed)
-        {
-            TryBindLocalPlayer();
-        }
+        UnsubscribeFromPlayer();
+        RefreshUI(0);
     }
 
     private void OnDestroy()
@@ -72,38 +69,14 @@ public class PointPlayerView : MonoBehaviour
     {
         UnsubscribeFromPlayer();
         EnsureVisible();
-        TryBindLocalPlayer();
-        RefreshUI(localPlayer != null ? localPlayer.points.Value : 0);
+        BindLocalPlayer();
     }
 
-    private void EnsureVisible()
+    public void RegisterLocalPlayer(PlayerController controller)
     {
-        if (canvasPointPlayer != null)
-        {
-            if (!canvasPointPlayer.gameObject.activeSelf)
-                canvasPointPlayer.gameObject.SetActive(true);
-
-            if (!canvasPointPlayer.enabled)
-                canvasPointPlayer.enabled = true;
-        }
-    }
-
-    private void TryBindLocalPlayer()
-    {
-        if (isSubscribed) return;
-
-        if (NetworkManager.Singleton == null || NetworkManager.Singleton.LocalClient == null)
-            return;
-
-        NetworkObject localPlayerObj = NetworkManager.Singleton.LocalClient.PlayerObject;
-        if (localPlayerObj == null) return;
-
-        PlayerController controller = localPlayerObj.GetComponent<PlayerController>();
-        if (controller == null)
-            controller = localPlayerObj.GetComponentInChildren<PlayerController>();
-
         if (controller == null || !controller.IsOwner) return;
 
+        UnsubscribeFromPlayer();
         localPlayer = controller;
         localPlayer.points.OnValueChanged += OnPointsChanged;
         isSubscribed = true;
@@ -112,12 +85,55 @@ public class PointPlayerView : MonoBehaviour
         RefreshUI(localPlayer.points.Value);
     }
 
+    public void UnregisterLocalPlayer(PlayerController controller)
+    {
+        if (controller != null && controller == localPlayer)
+        {
+            UnsubscribeFromPlayer();
+            RefreshUI(0);
+        }
+    }
+
+    private void BindLocalPlayer()
+    {
+        if (isSubscribed) return;
+
+        if (NetworkManager.Singleton == null || NetworkManager.Singleton.LocalClient == null)
+        {
+            RefreshUI(0);
+            return;
+        }
+
+        NetworkObject localPlayerObj = NetworkManager.Singleton.LocalClient.PlayerObject;
+        if (localPlayerObj == null)
+        {
+            RefreshUI(0);
+            return;
+        }
+
+        PlayerController controller = localPlayerObj.GetComponent<PlayerController>();
+        if (controller == null)
+        {
+            controller = localPlayerObj.GetComponentInChildren<PlayerController>();
+        }
+
+        if (controller != null && controller.IsOwner)
+        {
+            RegisterLocalPlayer(controller);
+        }
+        else
+        {
+            RefreshUI(0);
+        }
+    }
+
     private void UnsubscribeFromPlayer()
     {
         if (isSubscribed && localPlayer != null)
         {
             localPlayer.points.OnValueChanged -= OnPointsChanged;
         }
+
         localPlayer = null;
         isSubscribed = false;
     }
@@ -125,6 +141,21 @@ public class PointPlayerView : MonoBehaviour
     private void OnPointsChanged(int previousValue, int newValue)
     {
         RefreshUI(newValue);
+    }
+
+    private void EnsureVisible()
+    {
+        if (canvasPointPlayer == null) return;
+
+        if (!canvasPointPlayer.gameObject.activeSelf)
+        {
+            canvasPointPlayer.gameObject.SetActive(true);
+        }
+
+        if (!canvasPointPlayer.enabled)
+        {
+            canvasPointPlayer.enabled = true;
+        }
     }
 
     private void RefreshUI(int currentPoints)

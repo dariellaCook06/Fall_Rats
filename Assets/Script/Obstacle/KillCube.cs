@@ -3,26 +3,42 @@ using UnityEngine;
 
 public class KillCube : NetworkBehaviour
 {
+    private Rigidbody rb;
+
+    private void Awake()
+    {
+        rb = GetComponent<Rigidbody>();
+    }
+
+    public override void OnNetworkSpawn()
+    {
+        base.OnNetworkSpawn();
+
+        if (rb != null)
+        {
+            rb.isKinematic = true;
+            rb.useGravity = false;
+        }
+    }
+
     private void OnCollisionEnter(Collision collision)
     {
         if (!IsServer) return;
 
         PlayerController player = collision.gameObject.GetComponentInParent<PlayerController>();
-        if (player != null)
-        {
-            KillServerRpc(player.NetworkObjectId);
-        }
-    }
+        if (player == null) return;
 
-    [ServerRpc(RequireOwnership = false)]
-    private void KillServerRpc(ulong playerNetworkId)
-    {
-        if (!IsServer) return;
+        NetworkObject playerNetObj = player.GetComponent<NetworkObject>();
+        if (playerNetObj == null || !playerNetObj.IsSpawned) return;
 
-        if (NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(playerNetworkId, out NetworkObject obj))
+        ulong playerNetworkId = playerNetObj.NetworkObjectId;
+
+        if (NetworkManager.Singleton != null && NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(playerNetworkId, out NetworkObject obj))
         {
+            ulong clientId = obj.OwnerClientId;
             obj.gameObject.SetActive(false);
-            DiedClientRpc(obj.OwnerClientId);
+
+            DiedClientRpc(clientId);
         }
     }
 

@@ -10,17 +10,17 @@ public class PlayerController : NetworkBehaviour
     // Velocidad de desplazamiento del jugador
     public float speed = 5f;
 
+    // Fuerza del salto
+    public float jumpForce = 6f;
+
     // Vector de entrada enviado por el cliente y guardado en el servidor
     private Vector2 inputVector;
-
-    // Fuerza del salto
-    private float jumpForce = 6f;
 
     // Sonido del salto
     private AudioSource jumpSound;
 
     // Puntos acumulados del jugador sincronizados en red (empiezan en 0)
-    public NetworkVariable<int> points = new NetworkVariable<int>(0,NetworkVariableReadPermission.Everyone,NetworkVariableWritePermission.Server);
+    public NetworkVariable<int> points = new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
 
     // Suma puntos de forma segura desde el servidor
     public void AddPoints(int amount)

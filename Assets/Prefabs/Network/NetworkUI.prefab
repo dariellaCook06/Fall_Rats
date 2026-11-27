@@ -44,3 +44,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 25e8140341f3a494086cc6e3abe33d97, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NetworkUI
+  panelConexion: {fileID: 0}
+  campoIP: {fileID: 0}
+  menuSceneName: MainMenu

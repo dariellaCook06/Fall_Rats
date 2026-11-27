@@ -11,7 +11,6 @@ public class StartScript : NetworkBehaviour
     public TextMeshProUGUI readyButtonText;
     public TextMeshProUGUI playersCounterText;
     public NextMinigameLoader nextMinigameLoader;
-
     private int readyCount = 0;
     private bool isReady = false;
     private bool isStarting = false;
@@ -24,6 +23,8 @@ public class StartScript : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
+        base.OnNetworkSpawn();
+
         isStarting = false;
         readyCount = 0;
         isReady = false;
@@ -40,6 +41,15 @@ public class StartScript : NetworkBehaviour
         }
 
         RefreshText();
+    }
+
+    public override void OnNetworkDespawn()
+    {
+        base.OnNetworkDespawn();
+
+        readyCount = 0;
+        isReady = false;
+        isStarting = false;
     }
 
     public void ShowStartCanvas()
@@ -96,7 +106,7 @@ public class StartScript : NetworkBehaviour
     [ServerRpc(RequireOwnership = false)]
     private void AddReadyServerRpc(int delta)
     {
-        if (NetworkManager.Singleton == null || isStarting) return;
+        if (!IsServer || !IsSpawned || NetworkManager.Singleton == null || isStarting) return;
 
         int total = NetworkManager.Singleton.ConnectedClientsIds.Count;
         readyCount = Mathf.Clamp(readyCount + delta, 0, total);

@@ -1,19 +1,24 @@
+using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 
 public class PlatformMoveH : NetworkBehaviour
 {
     [SerializeField] private float spinSpeed = 180f;
+
+    [SerializeField] private bool invertDirection = false;
+
     private Rigidbody rb;
+
+    private readonly HashSet<Rigidbody> playersOnTop = new HashSet<Rigidbody>();
 
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();
-
-        // Kinematic para que el jugador no mueva/empuje la plataforma
         if (rb != null)
         {
             rb.isKinematic = true;
+            rb.useGravity = false;
         }
     }
 
@@ -21,23 +26,67 @@ public class PlatformMoveH : NetworkBehaviour
     {
         base.OnNetworkSpawn();
 
-        // Mantenemos kinematic en servidor y clientes para que no lo mueva el jugador[cite: 2, 4]
         if (rb != null)
         {
             rb.isKinematic = true;
+            rb.useGravity = false;
         }
     }
 
     private void FixedUpdate()
     {
-        // Solo el servidor rota la plataforma y sincroniza por NetworkTransform[cite: 2, 4]
         if (!IsServer || rb == null) return;
 
-        Quaternion step = Quaternion.Euler(0f, spinSpeed * Time.fixedDeltaTime, 0f);
+        float dir = invertDirection ? -1f : 1f;
+        Quaternion step = Quaternion.Euler(0f, spinSpeed * dir * Time.fixedDeltaTime, 0f);
+        Vector3 pivot = rb.position;
+
         rb.MoveRotation(rb.rotation * step);
+
+        playersOnTop.RemoveWhere(playerRb => playerRb == null);
+
+        foreach (Rigidbody playerRb in playersOnTop)
+        {
+            if (playerRb.isKinematic) continue;
+
+            Vector3 offset = playerRb.position - pivot;
+            Vector3 targetPos = pivot + (step * offset);
+
+            targetPos.y = playerRb.position.y;
+
+            playerRb.MovePosition(targetPos);
+        }
     }
 
-    [ServerRpc(RequireOwnership = false)]
+    private void OnCollisionEnter(Collision collision)
+    {
+        if (!IsServer) return;
+        if (!collision.gameObject.CompareTag("Player")) return;
+
+        Rigidbody playerRb = collision.rigidbody;
+        if (playerRb == null) return;
+
+        for (int i = 0; i < collision.contactCount; i++)
+        {
+            if (collision.GetContact(i).normal.y < -0.5f)
+            {
+                playersOnTop.Add(playerRb);
+                break;
+            }
+        }
+    }
+
+    private void OnCollisionExit(Collision collision)
+    {
+        if (!IsServer) return;
+
+        if (collision.rigidbody != null)
+        {
+            playersOnTop.Remove(collision.rigidbody);
+        }
+    }
+
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
     public void SetSpinServerRpc(float newSpeed)
     {
         if (!IsServer) return;
@@ -45,7 +94,7 @@ public class PlatformMoveH : NetworkBehaviour
         SpinChangedClientRpc(spinSpeed);
     }
 
-    [ClientRpc]
+    [Rpc(SendTo.ClientsAndHost)]
     private void SpinChangedClientRpc(float currentSpeed)
     {
         Debug.Log($"Giro horizontal a {currentSpeed}");

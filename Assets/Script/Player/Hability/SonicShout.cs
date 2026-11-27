@@ -20,10 +20,11 @@ public class SonicShout : NetworkBehaviour
         }
     }
 
-    [ServerRpc]
+    [ServerRpc(RequireOwnership = false)]
     private void ShoutServerRpc()
     {
-        if (timer > 0f) return;
+        if (!IsServer || timer > 0f) return;
+
         timer = duration;
         ShoutEffectClientRpc();
     }
@@ -39,17 +40,18 @@ public class SonicShout : NetworkBehaviour
         if (!IsServer || timer <= 0f) return;
 
         timer -= Time.fixedDeltaTime;
+
         Collider[] hits = Physics.OverlapSphere(transform.position, radius);
 
         foreach (Collider hit in hits)
         {
             if (hit.gameObject == gameObject) continue;
-            Rigidbody targetRb = hit.GetComponent<Rigidbody>();
-            if (targetRb != null)
-            {
-                Vector3 dir = (hit.transform.position - transform.position).normalized;
-                targetRb.AddForce(dir * pushForce, ForceMode.Force);
-            }
+
+            Rigidbody targetRb = hit.attachedRigidbody;
+            if (targetRb == null || targetRb.isKinematic) continue;
+
+            Vector3 dir = (targetRb.position - transform.position).normalized;
+            targetRb.AddForce(dir * pushForce, ForceMode.Force);
         }
     }
 }
