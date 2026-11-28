@@ -7,6 +7,7 @@ public class PlatformMoveRL : NetworkBehaviour
     public Transform pointA;
     public Transform pointB;
     public float speed = 2f;
+    public bool invertDirection = false;
 
     private Rigidbody rb;
     private float timer;
@@ -39,12 +40,23 @@ public class PlatformMoveRL : NetworkBehaviour
 
     private void FixedUpdate()
     {
-        if (!IsServer || rb == null || pointA == null || pointB == null) return;
+        if (!IsServer)
+        {
+            return;
+        }
+
+        if (rb == null || pointA == null || pointB == null)
+        {
+            return;
+        }
 
         timer += Time.fixedDeltaTime * speed;
         float t = Mathf.PingPong(timer, 1f);
 
-        Vector3 nextPos = Vector3.Lerp(pointA.position, pointB.position, t);
+        Vector3 startPos = invertDirection ? pointB.position : pointA.position;
+        Vector3 endPos = invertDirection ? pointA.position : pointB.position;
+
+        Vector3 nextPos = Vector3.Lerp(startPos, endPos, t);
         Vector3 moveDelta = nextPos - rb.position;
 
         rb.MovePosition(nextPos);
@@ -57,7 +69,10 @@ public class PlatformMoveRL : NetworkBehaviour
 
     private void OnCollisionEnter(Collision collision)
     {
-        if (!IsServer) return;
+        if (!IsServer)
+        {
+            return;
+        }
 
         PlayerController player = collision.gameObject.GetComponentInParent<PlayerController>();
         if (player != null)
@@ -68,7 +83,10 @@ public class PlatformMoveRL : NetworkBehaviour
 
     private void OnCollisionExit(Collision collision)
     {
-        if (!IsServer) return;
+        if (!IsServer)
+        {
+            return;
+        }
 
         PlayerController player = collision.gameObject.GetComponentInParent<PlayerController>();
         if (player != null && player.GetComponent<Rigidbody>() == playerRb)
@@ -76,4 +94,4 @@ public class PlatformMoveRL : NetworkBehaviour
             playerRb = null;
         }
     }
-}
+} 
