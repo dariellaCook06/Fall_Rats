@@ -101,6 +101,17 @@ public class StartScript : NetworkBehaviour
     public void Exit()
     {
         HideStartCanvas();
+
+        // Cierra también la zona (si no, se queda el cursor suelto y el "T" roto).
+        ZonaPulsaT zona = FindFirstObjectByType<ZonaPulsaT>();
+        if (zona != null)
+        {
+            zona.ForceClose();
+        }
+        else
+        {
+            PlayerCamera.SetCursorVisible(false);
+        }
     }
 
     [ServerRpc(RequireOwnership = false)]

@@ -48,6 +48,8 @@ public class ZonaPulsaT : MonoBehaviour
     {
         isOpen = true;
 
+        PlayerCamera.SetCursorVisible(true);
+
         if (promptCanvas != null)
             promptCanvas.SetActive(false);
 
@@ -61,10 +63,21 @@ public class ZonaPulsaT : MonoBehaviour
     {
         isOpen = false;
 
+        PlayerCamera.SetCursorVisible(false);
+
         if (startScript != null)
             startScript.HideStartCanvas();
         else if (startCanvas != null)
             startCanvas.enabled = false;
+    }
+
+    /// <summary>Lo llama el botón Exit del canvas para que T vuelva a funcionar.</summary>
+    public void ForceClose()
+    {
+        CloseStartUI();
+
+        if (canInteract && promptCanvas != null)
+            promptCanvas.SetActive(true);
     }
 
     private void OnTriggerEnter(Collider other)
