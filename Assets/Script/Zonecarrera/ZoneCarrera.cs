@@ -11,11 +11,6 @@ public class ZoneCarrera : NetworkBehaviour
     {
         base.OnNetworkSpawn();
 
-        if (!IsServer)
-        {
-            return;
-        }
-
         clientIds.Clear();
         checkpointPositions.Clear();
     }
@@ -23,11 +18,6 @@ public class ZoneCarrera : NetworkBehaviour
     public override void OnNetworkDespawn()
     {
         base.OnNetworkDespawn();
-
-        if (!IsServer)
-        {
-            return;
-        }
 
         clientIds.Clear();
         checkpointPositions.Clear();
@@ -52,6 +42,47 @@ public class ZoneCarrera : NetworkBehaviour
         }
     }
 
+    public bool TryGetCheckpoint(ulong clientId, out Vector3 checkpointPos)
+    {
+        int index = clientIds.IndexOf(clientId);
+        if (index >= 0)
+        {
+            checkpointPos = checkpointPositions[index];
+            return true;
+        }
+
+        checkpointPos = Vector3.zero;
+        return false;
+    }
+
+    public void TeleportToCheckpoint(PlayerController player, Vector3 fallbackPos)
+    {
+        if (!IsServer || player == null)
+        {
+            return;
+        }
+
+        Vector3 targetPos = fallbackPos;
+        if (TryGetCheckpoint(player.OwnerClientId, out Vector3 savedPos))
+        {
+            targetPos = savedPos;
+        }
+
+        Rigidbody rb = player.GetComponent<Rigidbody>();
+        if (rb != null)
+        {
+            if (!rb.isKinematic)
+            {
+                rb.linearVelocity = Vector3.zero;
+                rb.angularVelocity = Vector3.zero;
+            }
+
+            rb.position = targetPos;
+        }
+
+        player.transform.position = targetPos;
+    }
+
     private void OnTriggerEnter(Collider other)
     {
         if (!IsServer)
@@ -70,20 +101,9 @@ public class ZoneCarrera : NetworkBehaviour
             return;
         }
 
-        int index = clientIds.IndexOf(player.OwnerClientId);
-        if (index >= 0)
+        if (TryGetCheckpoint(player.OwnerClientId, out Vector3 targetPos))
         {
-            Vector3 targetPos = checkpointPositions[index];
-
-            Rigidbody rb = player.GetComponent<Rigidbody>();
-            if (rb != null && !rb.isKinematic)
-            {
-                rb.linearVelocity = Vector3.zero;
-                rb.angularVelocity = Vector3.zero;
-                rb.position = targetPos;
-            }
-
-            player.transform.position = targetPos;
+            TeleportToCheckpoint(player, targetPos);
         }
     }
 }
